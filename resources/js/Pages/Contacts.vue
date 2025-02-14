@@ -20,7 +20,20 @@
     const localVideo = ref(null);
     const isCalling = ref(false);
     const localStream = ref(null)
+    const messages = ref([]);
+    const newMessage = ref("");
 
+
+
+    // Send message function
+    const sendMessage = () => {
+        if (!newMessage.value.trim()) return;
+
+        axios.post("/messages", { message: newMessage.value }).then(response => {
+            messages.value.push(response.data);
+            newMessage.value = "";
+        });
+    };
 
     const callUser = () => {
         axios.post(`/video-call/request/${selectedUser.value.id}`, {peerId: peer.id});
@@ -130,6 +143,33 @@
 
     onMounted(() => {
         connectWebSocket();
+        axios.get("/messages").then(response => {
+            console.log("Fetched messages:", response.data);
+            messages.value = response.data.map(msg => ({
+                senderId: msg.senderId,
+                message: msg.message || msg.text
+            }));
+        });
+
+
+        // Listen for new messages
+        window.Echo.join("chat")
+            .here((users) => {
+                console.log("Users in chat:", users);
+            })
+            .joining((user) => {
+                console.log(user.name + " joined");
+            })
+            .leaving((user) => {
+                console.log(user.name + " left");
+            })
+            .listen("MessageSent", (event) => {
+                console.log("Received event message:", event);
+
+            // Ensure the correct structure
+            // messages.value.push(event.message);
+        });
+
     });
 
     onBeforeUnmount(() => {
@@ -230,11 +270,9 @@
 
                     <!-- Chat Section -->
                     <div class="flex flex-col bg-white p-4 border-t border-gray-200">
-                        <div class="overflow-y-auto max-h-60 space-y-2">
-                            <div v-for="(message, index) in messages" :key="index" :class="{'text-right': message.senderId === currentUser.id}">
-                                <div class="inline-block p-2 rounded-lg" :class="message.senderId === currentUser.id ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'">
-                                    {{ message.text }}
-                                </div>
+                       <div v-for="(message, index) in messages" :key="index":class="{'text-right': message.senderId === currentUser.id}">
+                            <div class="inline-block p-2 rounded-lg" :class="message.senderId === currentUser.id ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'">
+                                {{ message.message || message.text }}  <!-- Adjust field name -->
                             </div>
                         </div>
                         <div class="mt-4 flex items-center">

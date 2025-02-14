@@ -7,6 +7,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\ChatController;
+use Illuminate\Support\Facades\Broadcast;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -33,6 +35,13 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/video-call/request/{user}', [VideoCallController::class, 'requestVideoCall'])->name('video-call.request');
     Route::post('/video-call/request/status/{user}', [VideoCallController::class, 'requestVideoCallStatus'])->name('video-call.request-status');
+
+    Route::get('/messages', [ChatController::class, 'index']);
+    Route::post('/messages', [ChatController::class, 'sendMessage']);
+
+    Broadcast::channel('chat', function ($user) {
+        return ['id' => $user->id, 'name' => $user->name];
+    });
 });
 
 require __DIR__.'/auth.php';
