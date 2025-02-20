@@ -29,7 +29,7 @@
     const sendMessage = () => {
         if (!newMessage.value.trim()) return;
 
-        axios.post("/messages", { message: newMessage.value }).then(response => {
+        axios.post("/messages", { message: newMessage.value,user_id:selectedUser.value.id }).then(response => {
             messages.value.push(response.data);
             newMessage.value = "";
         });
@@ -61,6 +61,7 @@
     }
 
     const setSelectedUser = (user) => {
+        console.log('user click',user)
         selectedUser.value = user;
     };
 
@@ -144,7 +145,8 @@
     onMounted(() => {
         connectWebSocket();
         axios.get("/messages").then(response => {
-            console.log("Fetched messages:", response.data);
+            console.log('check click data get ? ',response.data);
+
             messages.value = response.data.map(msg => ({
                 senderId: msg.senderId,
                 message: msg.message || msg.text
